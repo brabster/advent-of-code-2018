@@ -7,10 +7,6 @@ import Debug exposing (..)
 type alias BoxId = Char
 type alias Count = Int
 
-parseInput : String -> List String
-parseInput =
-  String.split "\n"
-
 addToFrequencies : BoxId -> Dict BoxId Count -> Dict BoxId Count
 addToFrequencies x acc = update x (\mv -> Just ((Maybe.withDefault 0 mv) + 1)) acc
 
@@ -25,7 +21,7 @@ countHasValue v dicts = List.map frequencies dicts |> List.filter (hasValue v) |
 part1answer : Int
 part1answer =
   let
-    parsed = parseInput problemInput
+    parsed = String.lines problemInput
   in
     countHasValue 2 parsed * countHasValue 3 parsed
 
@@ -58,7 +54,7 @@ permutations l =
 
 
 part2answer =
-  parseInput problemInput
+  String.lines problemInput
   |> List.map String.toList
   |> permutations
   |> List.filter (\p -> let (a, b) = p in editDistance a b == 1)

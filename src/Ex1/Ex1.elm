@@ -9,7 +9,7 @@ type alias DeltaFrequency = Int
 
 parseInput : String -> List DeltaFrequency
 parseInput =
-  String.split "\n"
+  String.lines "\n"
   >> List.map String.toInt
   >> List.map (Maybe.withDefault 0)
 
