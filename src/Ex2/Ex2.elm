@@ -52,7 +52,6 @@ permutations l =
   in
     permutationsInternal l l
 
-
 part2answer =
   String.lines problemInput
   |> List.map String.toList
