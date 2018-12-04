@@ -54,3 +54,30 @@ part1answer = parseInput problemInput
   |> List.map (List.filter (\x -> x >= 2))
   |> List.map List.length
   |> List.sum
+
+inIntRange : Int -> Int -> Int -> Bool
+inIntRange lower upper test = lower < test && test < upper
+
+overlaps : Claim -> Claim -> Bool
+overlaps claim1 claim2 =
+  let
+    inXRange claim = inIntRange claim.topCorner.x (claim.topCorner.x + claim.area.x)
+    inYRange claim = inIntRange claim.topCorner.y (claim.topCorner.y + claim.area.y)
+  in
+    (inXRange claim1 claim2.topCorner.x || inXRange claim1 (claim2.topCorner.x + claim2.area.x))
+    && (inYRange claim1 claim2.topCorner.y || inYRange claim1 (claim2.topCorner.y + claim2.area.y))
+
+findOverlapping : (ClaimId, ClaimId, Bool) -> Set.Set ClaimId -> Set.Set ClaimId
+findOverlapping (claimId1, claimId2, doesOverlap) overlapping =
+  if doesOverlap then Set.insert claimId1 overlapping |> Set.insert claimId2 else overlapping
+
+part2answer =
+  let
+    claims = parseInput problemInput
+  in
+    claims
+    |> FuncTools.combinations
+    |> List.filter (\(c1, c2) -> c1.id == "59" || c2.id == "59")
+    |> List.map (\(claim1, claim2) -> (claim1.id, claim2.id, overlaps claim1 claim2))
+    --|> List.foldl findOverlapping Set.empty
+    --|> Set.diff (Set.fromList (List.map .id claims))
