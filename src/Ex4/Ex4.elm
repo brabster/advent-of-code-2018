@@ -68,35 +68,56 @@ listToPairs list =
 minsAsleep : (Int, Int) -> Int
 minsAsleep (x, y) = y - x
 
+sleepsByGuard input = input
+  |> List.foldl accumulateStep (Nothing, Dict.empty)
+  |> Tuple.second
+  |> Dict.toList
+  |> List.map (\(guardId, activities) -> (guardId, List.reverse activities
+    |> List.map ((\(_,time,_) -> time)
+      >> String.split ":"
+      >> List.drop 1
+      >> List.head
+      >> Maybe.withDefault "00"
+      >> String.toInt
+      >> Maybe.withDefault 0)))
+  |> Dict.fromList
+
+guardMinuteAsleepFrequencies guardSleeps = guardSleeps
+  |> listToPairs
+  |> List.map (\(a, b) -> List.range a b)
+  |> List.concat
+  |> FuncTools.frequencies
+
+maxValuedEntry = Dict.foldl (\k v (k1, v1) -> if v > v1 then (k, v) else (k1, v1))
+
+answerHash : Int -> GuardId -> Int
+answerHash minute guardId = minute * (String.replace "#" "" guardId |> String.toInt |> Maybe.withDefault 0)
+
 part1answer =
   let
     input = parseInput problemInput
-    guardSleeps = input
-      |> List.foldl accumulateStep (Nothing, Dict.empty)
-      |> Tuple.second
-      |> Dict.toList
-      |> List.map (\(guardId, activities) -> (guardId, List.reverse activities
-        |> List.map ((\(_,time,_) -> time)
-          >> String.split ":"
-          >> List.drop 1
-          >> List.head
-          >> Maybe.withDefault "00"
-          >> String.toInt
-          >> Maybe.withDefault 0)))
-      |> Dict.fromList
+    guardSleeps = sleepsByGuard input
     guardTotalMinsAsleep = guardSleeps
-      |> Dict.map (\_ v -> v |> (listToPairs
+      |> Dict.map (\_ v -> v
+      |> (listToPairs
         >> List.map minsAsleep
         >> List.sum))
     guardMostAsleep = guardTotalMinsAsleep
-      |> Dict.foldl (\k v (k1, v1) -> if v > v1 then (k, v) else (k1, v1)) ("", 0)
+      |> maxValuedEntry ("", 0)
       |> Tuple.first
-    guardMostAsleepSleeps = Dict.get guardMostAsleep guardSleeps
-      |> Maybe.withDefault []
-      |> listToPairs
-      |> List.map (\(a, b) -> List.range a b)
-      |> List.concat
-      |> FuncTools.frequencies
-      |> Dict.foldl (\k v (k1, v1) -> if v > v1 then (k, v) else (k1, v1)) (-1, -1)
+    guardMostAsleepSleeps = guardMinuteAsleepFrequencies (Dict.get guardMostAsleep guardSleeps |> Maybe.withDefault [])
+      |> maxValuedEntry (-1, -1)
   in
-    (Tuple.first guardMostAsleepSleeps) * (String.replace "#" "" guardMostAsleep |> String.toInt |> Maybe.withDefault 0)
+    answerHash (Tuple.first guardMostAsleepSleeps) guardMostAsleep
+
+part2answer =
+  let
+    input = parseInput problemInput
+    guardSleeps = sleepsByGuard input
+  in
+    guardSleeps
+    |> Dict.map (\_ sleeps ->
+      guardMinuteAsleepFrequencies sleeps
+      |> maxValuedEntry (-1, -1))
+    |> Dict.foldl (\k (m, v) (k1, (m1, v1)) -> if v > v1 then (k, (m, v)) else (k1, (m1, v1))) ("", (-1, -1))
+    |> (\(guardId, (minute, _)) -> answerHash minute guardId)
